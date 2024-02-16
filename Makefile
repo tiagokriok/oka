@@ -18,3 +18,15 @@ docker_up:
 
 docker_down:
 	docker compose down
+
+new_migration:
+	migrate create -ext sql -dir migrations -seq $(name)
+
+migrate_up:
+	migrate -path migrations -database "mysql://${DB_URL}" -verbose up
+
+migrate_down:
+	migrate -path migrations -database "mysql://${DB_URL}" -verbose down
+
+migrate_fix:
+	migrate -path migrations -database "mysql://${DB_URL}" force $(version)

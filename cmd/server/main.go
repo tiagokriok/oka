@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -14,13 +13,13 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/lucsky/cuid"
 )
 
 type Link struct {
-	ID          string `json:"id,omitempty"`
-	URL         string `json:"url"`
-	ShortKey    string `json:"shortKey"`
-	RedirectURL string `json:"redirectUrl"`
+	ID  string `json:"id,omitempty"`
+	URL string `json:"url"`
+	Key string `json:"key,omitempty"`
 }
 
 type DB struct {
@@ -84,6 +83,9 @@ func main() {
 			return err
 		}
 
+		link.ID = cuid.New()
+		link.Key = cuid.Slug()
+
 		return c.JSON(http.StatusOK, link)
 	})
 
@@ -97,16 +99,7 @@ func main() {
 
 func NewDB() (*DB, error) {
 
-	connStr := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s",
-		os.Getenv("DB_USERNAME"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_NAME"),
-	)
-
-	db, err := sql.Open("mysql", connStr)
+	db, err := sql.Open("mysql", os.Getenv("DB_URL"))
 	if err != nil {
 		return nil, err
 	}
