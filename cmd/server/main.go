@@ -16,14 +16,10 @@ import (
 	"github.com/lucsky/cuid"
 )
 
-type KeyParam struct {
-	Key string `param:"key"`
-}
-
 type Link struct {
-	ID  string `json:"id,omitempty"`
+	ID  string `json:"id,omitempty" param:"id"`
 	URL string `json:"url"`
-	Key string `json:"key,omitempty"`
+	Key string `json:"key,omitempty" param:"key"`
 }
 
 type DB struct {
@@ -65,15 +61,17 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.GET("/:key", func(c echo.Context) error {
-		var params KeyParam
+		var params Link
 
 		if err := c.Bind(&params); err != nil {
-			return err
+			slog.Error("Error params not found", err)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		link, err := linkRepository.GetLinkByKey(params.Key)
 		if err != nil {
 			slog.Error("Error get linking by key", err)
+			return c.NoContent(http.StatusNotFound)
 		}
 
 		return c.Redirect(http.StatusPermanentRedirect, link.URL)
@@ -96,7 +94,8 @@ func main() {
 		var link Link
 
 		if err := c.Bind(&link); err != nil {
-			return err
+			slog.Error("Error bad params link", err)
+			return c.NoContent(http.StatusBadRequest)
 		}
 
 		link.ID = cuid.New()
@@ -105,11 +104,12 @@ func main() {
 		err := linkRepository.CreateLink(&link)
 		if err != nil {
 			slog.Error("Error creating link", err)
+			return c.NoContent(http.StatusBadRequest)
 		}
 
 		c.Response().Header().Set("Location", fmt.Sprintf("/%s", link.Key))
 
-		return c.JSON(http.StatusOK, link)
+		return c.JSON(http.StatusCreated, link)
 	})
 
 	e.Logger.Fatal(e.Start(":3333"))
