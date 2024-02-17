@@ -5,15 +5,14 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tiagokriok/oka/internal/middlewares"
+	"github.com/tiagokriok/oka/internal/storages"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/lucsky/cuid"
 )
 
@@ -23,12 +22,8 @@ type Link struct {
 	Key string `json:"key,omitempty" param:"key"`
 }
 
-type DB struct {
-	*sqlx.DB
-}
-
 type LinkRepository struct {
-	db *DB
+	db *storages.MysqlDB
 }
 
 func main() {
@@ -39,7 +34,7 @@ func main() {
 		slog.Error("Error loading .env file")
 	}
 
-	db, err := NewDB()
+	db, err := storages.NewMysqlDB()
 	if err != nil {
 		slog.Error("Error initializing database connection", "error", err)
 		os.Exit(1)
@@ -108,27 +103,6 @@ func main() {
 	})
 
 	e.Logger.Fatal(e.Start(":3333"))
-}
-
-func NewDB() (*DB, error) {
-	db, err := sqlx.Connect("mysql", os.Getenv("DB_URL"))
-	if err != nil {
-		return nil, err
-	}
-
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
-
-	return &DB{db}, err
-}
-
-func (db *DB) Close() {
-	db.DB.Close()
 }
 
 func NewLinkRepository(db *DB) *LinkRepository {
