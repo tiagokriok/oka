@@ -10,6 +10,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/tiagokriok/oka/internal/middlewares"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
@@ -28,12 +29,6 @@ type DB struct {
 
 type LinkRepository struct {
 	db *DB
-}
-
-func customLogger() echo.MiddlewareFunc {
-	return middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "${time_rfc3339_nano} - ${uri} [${method} - ${status}] ${latency_human} - ${error}\n",
-	})
 }
 
 func main() {
@@ -57,7 +52,7 @@ func main() {
 
 	e := echo.New()
 
-	e.Use(customLogger())
+	e.Use(middlewares.CustomLogger())
 	e.Use(middleware.Recover())
 
 	e.GET("/:key", func(c echo.Context) error {
