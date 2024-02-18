@@ -10,21 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/tiagokriok/oka/internal/middlewares"
+	"github.com/tiagokriok/oka/internal/repositories"
 	"github.com/tiagokriok/oka/internal/storages"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lucsky/cuid"
 )
-
-type Link struct {
-	ID  string `json:"id,omitempty" param:"id"`
-	URL string `json:"url"`
-	Key string `json:"key,omitempty" param:"key"`
-}
-
-type LinkRepository struct {
-	db *storages.MysqlDB
-}
 
 func main() {
 	slog.Info("OKA init...")
@@ -43,7 +34,7 @@ func main() {
 
 	defer db.Close()
 
-	linkRepository := NewLinkRepository(db)
+	linkRepository := repositories.NewLinkRepository(db)
 
 	e := echo.New()
 
@@ -51,7 +42,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.GET("/:key", func(c echo.Context) error {
-		var params Link
+		var params repositories.Link
 
 		if err := c.Bind(&params); err != nil {
 			slog.Error("Error params not found", err)
@@ -81,7 +72,7 @@ func main() {
 	links := v1.Group("/links")
 
 	links.POST("", func(c echo.Context) error {
-		var link Link
+		var link repositories.Link
 
 		if err := c.Bind(&link); err != nil {
 			slog.Error("Error bad params link", err)
@@ -103,31 +94,4 @@ func main() {
 	})
 
 	e.Logger.Fatal(e.Start(":3333"))
-}
-
-func NewLinkRepository(db *DB) *LinkRepository {
-	slog.Info("New Link Repository")
-	return &LinkRepository{
-		db,
-	}
-}
-
-func (lr *LinkRepository) CreateLink(link *Link) error {
-	_, err := lr.db.Exec("INSERT INTO links (id, `key`, url) VALUES (?, ?, ?)", link.ID, link.Key, link.URL)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (lr *LinkRepository) GetLinkByKey(key string) (*Link, error) {
-	var link Link
-
-	err := lr.db.Get(&link, "SELECT * FROM links WHERE `key`=?", key)
-	if err != nil {
-		return &link, err
-	}
-
-	return &link, nil
 }

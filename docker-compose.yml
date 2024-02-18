@@ -11,3 +11,8 @@ services:
       MYSQL_DATABASE: okadb
       MYSQL_USER: oka
       MYSQL_PASSWORD: root123
+    volumes:
+      - oka:/var/lib/mysql
+
+volumes:
+  oka:
