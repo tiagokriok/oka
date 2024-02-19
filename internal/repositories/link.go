@@ -18,13 +18,13 @@ func NewLinkRepository(db *storages.MysqlDB) *LinkRepository {
 	}
 }
 
-func (lr *LinkRepository) CreateLink(link *Link) error {
+func (lr *LinkRepository) CreateLink(link *Link) (*Link, error) {
 	_, err := lr.db.Exec("INSERT INTO links (id, `key`, url) VALUES (?, ?, ?)", link.ID, link.Key, link.URL)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return link, nil
 }
 
 func (lr *LinkRepository) GetLinkByKey(key string) (*Link, error) {
